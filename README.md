@@ -6,30 +6,7 @@ SMART, SAW, dan TOPSIS.
 
 ---
 
-## Cara Deploy ke Streamlit Cloud
 
-### 1. Siapkan Repository GitHub
-
-```
-spk-ram/
-├── app.py
-├── requirements.txt
-└── README.md
-```
-
-Upload ketiga file ini ke repository GitHub (bisa private atau public).
-
-### 2. Deploy ke Streamlit Community Cloud
-
-1. Buka https://share.streamlit.io
-2. Login dengan akun GitHub
-3. Klik **"New app"**
-4. Pilih repository, branch `main`, dan file `app.py`
-5. Klik **"Deploy"**
-
-Selesai — app akan live dalam 1-2 menit.
-
----
 
 ## Cara Pakai Aplikasi
 

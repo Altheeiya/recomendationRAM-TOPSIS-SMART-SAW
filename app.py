@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="SPK Pemilihan RAM Terbaik",
-    page_icon="💾",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -213,7 +213,7 @@ def run_saw_fast(X, weights, criteria_types_list):
 # SIDEBAR
 # ─────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### ⚙️ Konfigurasi")
+    st.markdown("### Konfigurasi")
     st.markdown("---")
 
     uploaded = st.file_uploader(
@@ -327,10 +327,20 @@ for g in df_work["gen"].unique():
     med  = df_work.loc[df_work["gen"] == g, "price"].median()
     df_work.loc[mask, "price"] = med if not np.isnan(med) else df_work["price"].median()
 
+# Isi NaN price yang masih tersisa dengan 0 (fallback akhir)
+df_work["price"] = df_work["price"].fillna(0)
 df_work = df_work.dropna(subset=CRITERIA).reset_index(drop=True)
 df_work.rename(columns={"memoryName": "RAM"}, inplace=True)
 
 df_spk = df_work[["RAM", "gen"] + CRITERIA].copy()
+
+# Guard: hentikan jika tidak ada data setelah filtering
+if len(df_spk) == 0:
+    st.error(
+        "Tidak ada data setelah filtering. "
+        "Coba ubah filter Generasi RAM atau naikkan jumlah alternatif di sidebar."
+    )
+    st.stop()
 
 # Normalisasi bobot
 raw_weights = np.array([w_latency, w_readUncached, w_write, w_price])
@@ -342,12 +352,12 @@ weights = raw_weights / raw_weights.sum()
 # TAB LAYOUT
 # ─────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "📊 Dataset",
+    " Dataset",
     "SMART",
     "SAW",
     "TOPSIS",
-    "📈 Perbandingan",
-    "🔍 Sensitivitas",
+    " Perbandingan",
+    "Sensitivitas",
 ])
 
 
@@ -376,13 +386,13 @@ with tab1:
                 "write":        "{:,.0f} MB/s",
                 "price":        "${:.2f}",
             }),
-            use_container_width=True, height=380,
+            width="stretch", height=380,
         )
 
     with col_right:
         st.markdown('<p class="section-title">Statistik Kriteria</p>', unsafe_allow_html=True)
         desc = df_spk[CRITERIA].describe().round(2)
-        st.dataframe(desc, use_container_width=True)
+        st.dataframe(desc, width="stretch")
 
         st.markdown('<p class="section-title" style="margin-top:1rem">Bobot Kriteria</p>', unsafe_allow_html=True)
         wdf = pd.DataFrame({
@@ -390,7 +400,7 @@ with tab1:
             "Tipe":     ["Cost", "Benefit", "Benefit", "Cost"],
             "Bobot":    weights.round(4),
         })
-        st.dataframe(wdf, hide_index=True, use_container_width=True)
+        st.dataframe(wdf, hide_index=True, width="stretch")
 
     st.markdown("---")
     st.markdown('<p class="section-title">Distribusi Nilai Kriteria</p>', unsafe_allow_html=True)
@@ -413,7 +423,7 @@ with tab1:
         sns.despine(ax=ax)
 
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, width="stretch")
     plt.close()
 
     st.markdown('<p class="section-title">Heatmap Korelasi</p>', unsafe_allow_html=True)
@@ -425,7 +435,7 @@ with tab1:
                 cbar_kws={"shrink": 0.8})
     ax2.set_title("Korelasi Antar Kriteria", fontsize=11, fontweight="bold")
     plt.tight_layout()
-    st.pyplot(fig2, use_container_width=True)
+    st.pyplot(fig2, width="stretch")
     plt.close()
 
 
@@ -486,7 +496,7 @@ def show_method_tab(tab, method_name, score_col, rank_col, df_result, extra_cols
             merged[display_cols_final].style.format(
                 {score_col: "{:.4f}", **({c: "{:.4f}" for c in (extra_cols or [])})}
             ).background_gradient(subset=[score_col], cmap="Blues"),
-            use_container_width=True, hide_index=True,
+            width="stretch", hide_index=True,
         )
 
         st.markdown("---")
@@ -512,7 +522,7 @@ def show_method_tab(tab, method_name, score_col, rank_col, df_result, extra_cols
         ax.legend(fontsize=8)
         sns.despine(ax=ax)
         plt.tight_layout()
-        st.pyplot(fig, use_container_width=True)
+        st.pyplot(fig, width="stretch")
         plt.close()
 
         # Matriks Normalisasi
@@ -523,13 +533,13 @@ def show_method_tab(tab, method_name, score_col, rank_col, df_result, extra_cols
             st.caption("Matriks Utilitas (0–100)")
             st.dataframe(
                 smart_utility.style.format("{:.2f}").background_gradient(cmap="Blues"),
-                use_container_width=True,
+                width="stretch",
             )
         elif method_name == "SAW":
             st.caption("Matriks Normalisasi R")
             st.dataframe(
                 saw_R.style.format("{:.4f}").background_gradient(cmap="Blues"),
-                use_container_width=True,
+                width="stretch",
             )
         elif method_name == "TOPSIS":
             st.caption("Matriks Terbobot V + Jarak Ideal")
@@ -542,10 +552,10 @@ def show_method_tab(tab, method_name, score_col, rank_col, df_result, extra_cols
             col_a, col_b = st.columns(2)
             with col_a:
                 st.caption("Matriks Terbobot V")
-                st.dataframe(V_df.style.format("{:.6f}").background_gradient(cmap="Blues"), use_container_width=True)
+                st.dataframe(V_df.style.format("{:.6f}").background_gradient(cmap="Blues"), width="stretch")
             with col_b:
                 st.caption("Jarak ke Solusi Ideal")
-                st.dataframe(dist_df.style.format("{:.6f}").background_gradient(cmap="Oranges"), use_container_width=True)
+                st.dataframe(dist_df.style.format("{:.6f}").background_gradient(cmap="Oranges"), width="stretch")
 
 
 show_method_tab(tab2, "SMART",  "SMART_Score",  "SMART_Rank",  smart_result)
@@ -620,7 +630,7 @@ with tab5:
             "SAW Score":    "{:.4f}",
             "TOPSIS Score": "{:.4f}",
         }).background_gradient(subset=["Final Rank"], cmap="YlOrRd_r"),
-        hide_index=True, use_container_width=True,
+        hide_index=True, width="stretch",
     )
 
     st.markdown("---")
@@ -646,7 +656,7 @@ with tab5:
     ax.legend()
     sns.despine(ax=ax)
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, width="stretch")
     plt.close()
 
     # Korelasi Spearman
@@ -672,7 +682,7 @@ with tab5:
                     annot_kws={"size": 13, "weight": "bold"})
         ax3.set_title("Korelasi Spearman Antar Metode", fontsize=10, fontweight="bold")
         plt.tight_layout()
-        st.pyplot(fig3, use_container_width=True)
+        st.pyplot(fig3, width="stretch")
         plt.close()
 
     with col_corr2:
@@ -736,7 +746,7 @@ with tab5:
 
     plt.suptitle("Radar Chart: Top 5 RAM — Konsistensi Skor per Metode", fontsize=12, fontweight="bold")
     plt.tight_layout()
-    st.pyplot(fig4, use_container_width=True)
+    st.pyplot(fig4, width="stretch")
     plt.close()
 
 
@@ -822,7 +832,7 @@ with tab6:
     ], loc="lower right", fontsize=8)
     sns.despine(ax=ax5)
     plt.tight_layout()
-    st.pyplot(fig5, use_container_width=True)
+    st.pyplot(fig5, width="stretch")
     plt.close()
 
     st.markdown("---")
@@ -836,9 +846,9 @@ with tab6:
 
     st.dataframe(
         df_sens.style
-            .applymap(color_stab, subset=["Stabilitas"])
+            .map(color_stab, subset=["Stabilitas"])
             .format({"Rank Rata-rata": "{:.2f}", "Std Dev": "{:.2f}"}),
-        hide_index=True, use_container_width=True,
+        hide_index=True, width="stretch",
     )
 
     # Download button
